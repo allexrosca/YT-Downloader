@@ -5,11 +5,6 @@ from PySide2 import QtCore
 DOWNLOAD_FOLDER = 'D:\\youtubeDownloader\\'
 ERRORS_FOLDER = os.path.join(DOWNLOAD_FOLDER, 'errors')
 
-PLAYLIST_URL = r'https://www.youtube.com/watch?v=3R7B6kj6Fd8&list=PLfg1Xjg5naUR3Kk5XBUxQplAa3AhW4gkw'
-# or
-# SINGLE_SONG_URL = r'https://youtu.be/3R7B6kj6Fd8'
-
-
 class MyLogger(QtCore.QObject):
     message_signal = QtCore.Signal(str)
 
@@ -89,9 +84,3 @@ CONFIG = {
     'outtmpl': f'{DOWNLOAD_FOLDER}/%(title)s.%(ext)s',  # poate alt_title
     'logger': MyLogger(),
 }
-
-def single_song_url_defined():
-    if 'SINGLE_SONG_URL' in globals():
-        return True
-    else:
-        return False
