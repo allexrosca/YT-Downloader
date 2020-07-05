@@ -3,7 +3,6 @@ import youtube_dl
 import ytdl_config
 from useful_methods import check_and_create_folder
 import os
-from func_timeout import *
 from PySide2 import QtCore
 from pytube import Playlist
 
@@ -83,44 +82,3 @@ class DownloadPlaylist(QtCore.QThread, QtCore.QObject):
                 file = open(os.path.join(errors_folder, 'not_accessible_links.txt'), 'w')
                 file.write('\n'.join(str(link) + ' -> ' + str(error) + '\n' for link, error in not_accessible_links))
                 file.close()
-
-def question():
-    question = input('\n\nDo you want to manually write the link?\n\tYes - you can manually paste the links\n\tSpace + Enter (or wait 3 seconds) - skip this step\n\n').lower().strip()
-    return question
-
-
-def main():
-    links = []
-    try:
-        manual_input = func_timeout(3, question)
-    except FunctionTimedOut:
-        manual_input = ''
-
-    if manual_input == 'yes':
-        print('Paste link(s) here:')
-        while True:
-            link = input()
-            if link == '':
-                print('Closing...')
-                break
-            links.append(link)
-
-    elif manual_input == '':
-        print('Using saved links...\n')
-        if ytdl_config.single_song_url_defined():
-            links = ytdl_config.SINGLE_SONG_URL
-        else:
-            links = ytdl_config.PLAYLIST_URL
-
-    else:
-        print('Yes or Enter only!')
-        return
-
-    if isinstance(links, list):
-        DownloadPlaylist(links, ytdl_config.CONFIG).run()
-    else:
-        DownloadPlaylist([links], ytdl_config.CONFIG).run()
-
-
-if __name__ == "__main__":
-    main()
