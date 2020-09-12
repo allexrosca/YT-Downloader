@@ -5,6 +5,7 @@ from useful_methods import check_and_create_folder
 import os
 from PySide2 import QtCore
 from pytube import Playlist
+import re
 
 
 class DownloadPlaylist(QtCore.QThread, QtCore.QObject):
@@ -41,6 +42,7 @@ class DownloadPlaylist(QtCore.QThread, QtCore.QObject):
             if str(link).find('playlist') != -1 or str(link).find('list') != -1:
                 self.playlist_link_index.emit(self.download_content.index(link) + 1)
                 link = Playlist(link)
+                link._video_regex = re.compile(r"\"url\":\"(/watch\?v=[\w-]*)")
                 self.playlist_length.emit(len(link))
             else:
                 link = [link]
