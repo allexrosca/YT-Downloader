@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 import youtube_dl
 import ytdl_config
-from useful_methods import check_and_create_folder
+from general_utils.methods import check_and_create_folder
 import os
 from PySide2 import QtCore
 from pytube import Playlist
@@ -14,8 +14,12 @@ class DownloadPlaylist(QtCore.QThread, QtCore.QObject):
     current_link_index = QtCore.Signal(int)
     download_status = QtCore.Signal(bool)
 
-    def __init__(self, download_content, ydl_opts={}, other_options={}, *args, **kwargs):
+    def __init__(self, download_content, ydl_opts=None, other_options=None, *args, **kwargs):
         QtCore.QThread.__init__(self, *args, **kwargs)
+        if other_options is None:
+            other_options = {}
+        if ydl_opts is None:
+            ydl_opts = {}
         self.download_content = download_content
         self.ydl_opts = ydl_opts
         self._other_options = other_options
