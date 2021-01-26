@@ -1,12 +1,11 @@
-import sys
-from PySide2 import QtCore, QtWidgets, QtGui
-from PySide2.QtWidgets import QFileDialog, QCheckBox, QPlainTextEdit, QTextEdit, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QGridLayout
-from ytdl_config import CONFIG, MyLogger
-from downloader import DownloadPlaylist
 import ctypes
 import os
 import youtube_dl
 import json
+from PySide2 import QtCore, QtWidgets, QtGui
+from PySide2.QtWidgets import QFileDialog, QCheckBox, QTextEdit, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QGridLayout
+from ytdl_config import CONFIG, MyLogger
+from downloader import DownloadPlaylist
 
 
 class YTDownloaderUI(QtWidgets.QWidget):
@@ -306,17 +305,3 @@ class YTDownloaderUI(QtWidgets.QWidget):
             self._downloader_output.append(self._download_error_found)
 
         self._downloader_output.append('\n=== DONE ===')
-
-
-if __name__ == "__main__":
-    app = QtWidgets.QApplication([])
-    user32 = ctypes.windll.user32
-    interface = YTDownloaderUI()
-    width = user32.GetSystemMetrics(0)
-    height = user32.GetSystemMetrics(1)
-    interface.resize(int(width - width / 3), int(height - height / 4))
-    interface.show()
-    interface.buttons['Exit'].clicked.connect(app.exit)
-    # de reparat in cazu in care pathu e prea mare
-    sys.exit(app.exec_())
-
