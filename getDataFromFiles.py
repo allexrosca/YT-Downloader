@@ -1,6 +1,6 @@
 import os
 from tinytag import TinyTag
-from iTunes import iTunesSearch
+from iTunesSearch import iTunesSearch
 import json
 import unidecode
 
@@ -82,7 +82,7 @@ class getInfoForDB(object):
         artists_not_found = set()
         for artist_name in self._artists:
             search = iTunesSearch(max_tracks_to_search=100)
-            search_result = search.search_artist(artist_name)
+            search_result = search.searchArtist(artist_name)
             if search_result != -1 and search_result[0]:
                 artists_found.add(artist_name)
             else:
@@ -94,7 +94,7 @@ class getInfoForDB(object):
         albums_not_found = set()
         for albums_name in self._albums:
             search = iTunesSearch(max_tracks_to_search=100)
-            search_result = search.search_album(albums_name)
+            search_result = search.searchAlbum(albums_name)
             if search_result != -1 and search_result[0]:
                 albums_found.add(albums_name)
             else:
@@ -106,7 +106,7 @@ class getInfoForDB(object):
         albums_not_found = set()
         for artist_name, albums_name in self._artists_and_albums:
             search = iTunesSearch(max_tracks_to_search=200)
-            search_result = search.search_artist_album(artist_name, albums_name)
+            search_result = search.searchAlbumOfArtist(artist_name, albums_name)
             if search_result != -1 and search_result[0]:
                 albums_found.add(albums_name)
             else:
