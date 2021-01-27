@@ -1,4 +1,4 @@
-from useful_methods import check_and_create_folder
+from general_utils.methods import check_and_create_folder
 import os
 from PySide2 import QtCore
 

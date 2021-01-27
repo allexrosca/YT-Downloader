@@ -1,113 +1,99 @@
 import requests
 from general_utils.methods import normalize_string
+from utils.methods import full_match_artist_song_in_tracks, full_match_artist_album_in_tracks
 
 
 class DeezerSearch:
     def __init__(self, max_tracks_to_search=50):
         self._max_tracks_to_search = max_tracks_to_search
 
-    def search_artist(self, artist=''):
-        if not artist:
-            return -1
-        else:
-            artist = normalize_string(artist)
-
-        link = f'https://api.deezer.com/search?output=json&limit={self._max_tracks_to_search}&q=artist:"{artist}"'
-        response = requests.get(link)
-        artist_found = False
-        artist_found_index = False
-
-        if response.status_code == 200:
-            for track in response.json()['data']:
-                if 'artist' in track:
-                    if 'name' in track['artist']:
-                        if normalize_string(track['artist']['name']) == artist:
-                            artist_found = True
-                            artist_found_index = track
-
-        return artist_found, artist_found_index
-
-    def search_song(self, song=''):
-        if not song:
-            return -1
-        else:
-            song = normalize_string(song)
-
-        link = f'https://api.deezer.com/search?output=json&limit={self._max_tracks_to_search}&q=track:"{song}"'
-        response = requests.get(link)
-        song_found = False
-        song_found_index = False
-
-        if response.status_code == 200:
-            for track in response.json()['data']:
-                if 'title' in track:
-                    if normalize_string(track['title']) == song:
-                        song_found = True
-                        song_found_index = track
-
-        return song_found, song_found_index
-
-    def search_album(self, album=''):
-        if not album:
-            return -1
-        else:
-            album = normalize_string(album)
-
-        link = f'https://api.deezer.com/search?output=json&limit={self._max_tracks_to_search}&q=album:"{album}"'
-        response = requests.get(link)
-        album_found = False
-        album_found_index = False
-
-        if response.status_code == 200:
-            for track in response.json()['data']:
-                if 'album' in track:
-                    if 'title' in track['album']:
-                        if normalize_string(track['album']['title']) == album:
-                            album_found = True
-                            album_found_index = track
-
-        return album_found, album_found_index
-
-    def search_artist_song(self, artist=None, song=None, max_tracks_to_search=None):
+    def _normalize_search_items(self, max_tracks_to_search=None, *item_list):
         if max_tracks_to_search is None:
             max_tracks_to_search = self._max_tracks_to_search
 
-        if not artist or not song:
-            return -1
+        normalized_items = []
+        if item_list:
+            for item in item_list:
+                if not item:
+                    return -1
+                normalized_items.append(normalize_string(item))
+        return (max_tracks_to_search, *normalized_items)
 
-        artist = normalize_string(artist)
-        song = normalize_string(song)
+    @staticmethod
+    def _get_tracks(filters, max_tracks_to_search):
+        link = f'https://api.deezer.com/search?output=json&limit={max_tracks_to_search}&q='
+        for key, value in filters.items():
+            link = link + f'{key}:"{value}",'
+        return requests.get(link[:-1])
 
-        link = f'https://api.deezer.com/search?output=json&limit={max_tracks_to_search}&q=track:"{artist}{song}"'
-        response = requests.get(link)
-        song_found = False
-        song_found_index = False
+    def search_artist(self, artist, max_tracks_to_search=None):
+        max_tracks_to_search, artist = self._normalize_search_items(max_tracks_to_search, artist)
+        response = self._get_tracks({'artist': artist}, max_tracks_to_search)
 
         if response.status_code == 200:
             for track in response.json()['data']:
-                if 'title' in track and 'artist' in track:
-                    if 'name' in track['artist']:
-                        if normalize_string(track['title']) == song and \
-                                normalize_string(track['artist']['name']) == artist:
-                            song_found = True
-                            song_found_index = track
+                if 'artist' in track and 'name' in track['artist']:
+                    if normalize_string(track['artist']['name']) == normalize_string(artist):
+                        return True, track
+        return False, None
 
-        if not song_found:
-            backup_link = f'https://api.deezer.com/search?output=json&limit={max_tracks_to_search}&q="{song}"'
-            backup_response = requests.get(backup_link)
+    def search_song(self, song, max_tracks_to_search=None):
+        max_tracks_to_search, song = self._normalize_search_items(max_tracks_to_search, song)
+        response = self._get_tracks({'track': song}, max_tracks_to_search)
+        if response.status_code == 200:
+            for track in response.json()['data']:
+                if 'title' in track:
+                    if normalize_string(track['title']) == normalize_string(song):
+                        return True, track
+        return False, None
 
-            if backup_response.status_code == 200:
-                for track in backup_response.json()['data']:
-                    if 'title' in track and 'artist' in track:
-                        if 'name' in track['artist']:
-                            if normalize_string(track['title']) == song and \
-                                    normalize_string(track['artist']['name']) == artist:
-                                song_found = True
-                                song_found_index = track
+    def search_album(self, album, max_tracks_to_search=None):
+        max_tracks_to_search, album = self._normalize_search_items(max_tracks_to_search, album)
+        response = self._get_tracks({'album': album}, max_tracks_to_search)
 
-        if not song_found and max_tracks_to_search < 200:
-            song_found, song_found_index = self.search_artist_song(artist, song, max_tracks_to_search=200)
+        if response.status_code == 200:
+            for track in response.json()['data']:
+                if 'album' in track and 'title' in track['album']:
+                    if normalize_string(track['album']['title']) == normalize_string(album):
+                        return True, track
+        return False, None
 
-        return song_found, song_found_index
+    def search_artist_song(self, artist=None, song=None, max_tracks_to_search=None):
+        full_match = False
+        full_match_index = None
 
-# TODO: search_artist_album
+        max_tracks_to_search, artist, song = self._normalize_search_items(max_tracks_to_search, artist, song)
+
+        response = self._get_tracks({'artist': artist, 'track': song}, max_tracks_to_search)
+        if response.status_code == 200 and response.json()['total']:
+            full_match, full_match_index = full_match_artist_song_in_tracks(artist, song, response.json()['data'])
+
+        if not full_match:
+            backup_response = self._get_tracks({'track': song}, max_tracks_to_search)
+
+            if backup_response.status_code == 200 and backup_response.json()['total']:
+                full_match, full_match_index = full_match_artist_song_in_tracks(artist, song, backup_response.json()['data'])
+
+        if not full_match and max_tracks_to_search < 200:
+            full_match, full_match_index = self.search_artist_song(artist, song, max_tracks_to_search=200)
+
+        return full_match, full_match_index
+
+    def search_artist_album(self, artist=None, album=None, max_tracks_to_search=None):
+        full_match = False
+        full_match_index = None
+
+        max_tracks_to_search, artist, album = self._normalize_search_items(max_tracks_to_search, artist, album)
+
+        response = self._get_tracks({'artist': artist, 'album': album}, max_tracks_to_search)
+        if response.status_code == 200 and response.json()['total']:
+            full_match, full_match_index = full_match_artist_album_in_tracks(artist, album, response.json()['data'])
+
+        if not full_match:
+            backup_response = self._get_tracks({'album': album}, max_tracks_to_search)
+            if backup_response.status_code == 200 and backup_response.json()['total']:
+                full_match, full_match_index = full_match_artist_album_in_tracks(artist, album, backup_response.json()['data'])
+
+        if not full_match and max_tracks_to_search < 200:
+            full_match, full_match_index = self.search_artist_album(artist, album, max_tracks_to_search=200)
+        return full_match, full_match_index

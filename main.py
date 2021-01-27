@@ -1,6 +1,6 @@
 import sys
 import ctypes
-from PySide2 import QtCore, QtWidgets, QtGui
+from PySide2 import QtWidgets
 from UI import YTDownloaderUI
 
 
@@ -14,4 +14,3 @@ if __name__ == "__main__":
     interface.show()
     interface.buttons['Exit'].clicked.connect(app.exit)
     sys.exit(app.exec_())
-#test

@@ -11,107 +11,74 @@ class iTunesSearch:
 
     @staticmethod
     def _normalize_string_for_search(string):
-        string = unidecode.unidecode(string.lower())
-        string = str(string.strip()).replace(' ', '+')
-        string = re.sub(r'(\(.*\))', '', string)
-        return string.strip()
+        return str(normalize_string(string).replace(' ', '+'))
 
-    def _normalize_search_items(self, artist, artist_item, max_tracks_to_search=None):
+    def _normalize_search_items(self, max_tracks_to_search=None, *item_list):
         if max_tracks_to_search is None:
             max_tracks_to_search = self._max_tracks_to_search
 
-        if not artist or not artist_item:
-            return -1
-
-        artist = normalize_string(artist)
-        artist_item = normalize_string(artist_item)
-
-        artist_for_search = self._normalize_string_for_search(artist)
-        artist_item_for_search = self._normalize_string_for_search(artist_item)
-
-        return artist_for_search, artist_item_for_search, max_tracks_to_search
+        normalized_items = []
+        if item_list:
+            for item in item_list:
+                if not item:
+                    return -1
+                normalized_items.append(self._normalize_string_for_search(normalize_string(item)))
+        return (max_tracks_to_search, *normalized_items)
 
     @staticmethod
-    def _get_tracks(artist_for_search, artist_item_for_search, max_tracks_to_search, is_backup=False):
-        link = f'https://itunes.apple.com/search?explicit=yes&media=music&limit={max_tracks_to_search}&term={artist_item_for_search}' if is_backup else \
-            f'https://itunes.apple.com/search?explicit=yes&media=music&limit={max_tracks_to_search}&term={artist_for_search}+{artist_item_for_search}'
-        return requests.get(link)
+    def _get_tracks(filters, max_tracks_to_search):
+        link = f'https://itunes.apple.com/search?explicit=yes&media=music&limit={max_tracks_to_search}&term='
+        for value in filters:
+            link = link + f'{value}+'
+        return requests.get(link[:-1])
 
-    def search_artist(self, artist):
-        # TODO: raise exceptions in these cases
-        if not artist:
-            return -1
+    def search_artist(self, artist, max_tracks_to_search=None):
+        max_tracks_to_search, artist_search_normalized = self._normalize_search_items(max_tracks_to_search, artist)
 
-        artist = normalize_string(artist)
-
-        artist_for_search = self._normalize_string_for_search(artist)
-        link = f'https://itunes.apple.com/search?explicit=yes&media=music&limit={self._max_tracks_to_search}&term={artist_for_search}'
-        response = requests.get(link)
-        artist_found = False
-        artist_found_index = False
-        if response.status_code == 200:
+        response = self._get_tracks([artist_search_normalized], max_tracks_to_search)
+        if response.status_code == 200 and response.json()['resultCount']:
             for track in response.json()['results']:
                 if 'artistName' in track:
-                    if normalize_string(track['artistName']) == artist:
-                        artist_found = True
-                        artist_found_index = track
+                    if normalize_string(track['artistName']) == normalize_string(artist):
+                        return True, track
+        return False, None
 
-        return artist_found, artist_found_index
+    def search_song(self, song, max_tracks_to_search=None):
+        max_tracks_to_search, song_search_normalized = self._normalize_search_items(max_tracks_to_search, song)
 
-    def search_song(self, song):
-        if not song:
-            return -1
-
-        song = normalize_string(song)
-
-        song_for_search = self._normalize_string_for_search(song)
-        link = f'https://itunes.apple.com/search?explicit=yes&media=music&limit={self._max_tracks_to_search}&term={song_for_search}'
-        response = requests.get(link)
-
-        song_found = False
-        song_found_index = False
-        if response.status_code == 200:
+        response = self._get_tracks([song_search_normalized], max_tracks_to_search)
+        if response.status_code == 200 and response.json()['resultCount']:
             for track in response.json()['results']:
                 if 'trackName' in track:
-                    if normalize_string(track['trackName']) == song:
-                        song_found = True
-                        song_found_index = track
+                    if normalize_string(track['trackName']) == normalize_string(song):
+                        return True, track
+        return False, None
 
-        return song_found, song_found_index
+    def search_album(self, album, max_tracks_to_search=None):
+        max_tracks_to_search, album_search_normalized = self._normalize_search_items(max_tracks_to_search, album)
 
-    def search_album(self, album):
-        if not album:
-            return -1
-
-        album = normalize_string(album)
-
-        album_for_search = self._normalize_string_for_search(album)
-        link = f'https://itunes.apple.com/search?explicit=yes&media=music&limit={self._max_tracks_to_search}&term={album_for_search}'
-        response = requests.get(link)
-        album_found = False
-        album_found_index = False
-        if response.status_code == 200:
+        response = self._get_tracks([album_search_normalized], max_tracks_to_search)
+        if response.status_code == 200 and response.json()['resultCount']:
             for track in response.json()['results']:
                 if 'collectionName' in track:
-                    if normalize_string(track['collectionName']) == album:
-                        album_found = True
-                        album_found_index = track
-        return album_found, album_found_index
+                    if normalize_string(track['collectionName']) == normalize_string(album):
+                        return True, track
+        return False, None
 
-    def search_artist_song(self, artist=None, song=None, max_tracks_to_search=None):
+    def search_artist_song(self, artist, song, max_tracks_to_search=None):
         full_match = False
         full_match_index = False
 
-        artist_for_search, artist_song_for_search, max_tracks_to_search = self._normalize_search_items(artist, song, max_tracks_to_search)
+        max_tracks_to_search, artist_for_search, artist_song_for_search = self._normalize_search_items(max_tracks_to_search, artist, song)
 
-        response = self._get_tracks(artist_for_search, artist_song_for_search, max_tracks_to_search)
-        if response.status_code == 200:
+        response = self._get_tracks([artist_for_search, artist_song_for_search], max_tracks_to_search)
+        if response.status_code == 200 and response.json()['resultCount']:
             full_match, full_match_index = full_match_artist_song_in_tracks(artist, song, response.json()['results'])
 
         if not full_match:
-            backup_response = self._get_tracks(artist_for_search, artist_song_for_search, max_tracks_to_search, True)
+            backup_response = self._get_tracks([artist_song_for_search], max_tracks_to_search)
 
-            if backup_response.status_code == 200:
+            if backup_response.status_code == 200 and backup_response.json()['resultCount']:
                 full_match, full_match_index = full_match_artist_song_in_tracks(artist, song, backup_response.json()['results'])
 
         if not full_match and max_tracks_to_search < 200:
@@ -123,16 +90,16 @@ class iTunesSearch:
         full_match = False
         full_match_index = False
 
-        artist_for_search, artist_album_for_search, max_tracks_to_search = self._normalize_search_items(artist, album, max_tracks_to_search)
+        max_tracks_to_search, artist_for_search, artist_album_for_search = self._normalize_search_items(max_tracks_to_search, artist, album)
 
-        response = self._get_tracks(artist_for_search, artist_album_for_search, max_tracks_to_search)
-        if response.status_code == 200:
+        response = self._get_tracks([artist_for_search, artist_album_for_search], max_tracks_to_search)
+        if response.status_code == 200 and response.json()['resultCount']:
             full_match, full_match_index = full_match_artist_album_in_tracks(artist, album, response.json()['results'])
 
         if not full_match:
-            backup_response = self._get_tracks(artist_for_search, artist_album_for_search, max_tracks_to_search, True)
+            backup_response = self._get_tracks([artist_album_for_search], max_tracks_to_search)
 
-            if backup_response.status_code == 200:
+            if backup_response.status_code == 200 and backup_response.json()['resultCount']:
                 full_match, full_match_index = full_match_artist_album_in_tracks(artist, album, backup_response.json()['results'])
 
         if not full_match and max_tracks_to_search < 200:

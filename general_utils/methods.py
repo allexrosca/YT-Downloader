@@ -9,5 +9,4 @@ def check_and_create_folder(path):
 
 def normalize_string(string):
     string = unidecode.unidecode(string.lower())
-    string = string.strip()
-    return string
+    return string.strip()
