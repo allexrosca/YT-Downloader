@@ -1,6 +1,6 @@
 import os
 from tinytag import TinyTag
-from itunes.itunes_search import iTunesSearch
+from iTunes import iTunesSearch
 import json
 import unidecode
 
