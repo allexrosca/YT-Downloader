@@ -3,7 +3,6 @@ import ctypes
 from PySide2 import QtWidgets
 from UI import YTDownloaderUI
 
-
 if __name__ == "__main__":
     app = QtWidgets.QApplication([])
     user32 = ctypes.windll.user32

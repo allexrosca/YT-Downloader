@@ -4,8 +4,9 @@ from iTunes import iTunesSearch
 import json
 import unidecode
 
+
 class getInfoForDB(object):
-    def __init__(self, accepted_file_types= None):
+    def __init__(self, accepted_file_types=None):
         if accepted_file_types is None:
             self._accepted_file_types = ['.mp3', '.mp4']
         self._artists = set()
@@ -22,7 +23,7 @@ class getInfoForDB(object):
         string = unidecode.unidecode(string.lower())
         string = string.strip()
         return string
-    
+
     def _write_in_json_file(self, data, file_path):
         with open(file_path, 'w') as f:
             json.dump(data, f, indent=2)
@@ -31,7 +32,7 @@ class getInfoForDB(object):
         if not os.path.isfile(file_path) or os.path.getsize(file_path) == 0:
             default_info = {'artists': [],
                             'albums': []}
-            with open(file_path,'w') as file:
+            with open(file_path, 'w') as file:
                 json.dump(default_info, file, indent=2)
         else:
             with open(file_path) as file:
@@ -72,10 +73,10 @@ class getInfoForDB(object):
                     if tags.album:
                         self._albums.add(tags.album)
                     if tags.artist and tags.album:
-                        self._artists_and_albums.add((tags.artist,tags.album))
+                        self._artists_and_albums.add((tags.artist, tags.album))
         self._artists = set(filter(None, self._artists))
         self._albums = set(filter(None, self._albums))
-        self._artists_and_albums = set(filter(None, self._artists_and_albums)) # nu e bun nush de ce
+        self._artists_and_albums = set(filter(None, self._artists_and_albums))  # nu e bun nush de ce
 
     def verifyArtists(self):
         artists_found = set()
@@ -113,7 +114,7 @@ class getInfoForDB(object):
                 albums_not_found.add(albums_name)
         return (albums_found, albums_not_found)
 
-    def updateArtistsInFile(self, file_path, write_not_found= True):
+    def updateArtistsInFile(self, file_path, write_not_found=True):
         verified_artists, artists_not_found = self.verifyArtists()
         self._find_or_create_db_file(file_path)
         with open(file_path) as db:
@@ -126,9 +127,9 @@ class getInfoForDB(object):
 
         if write_not_found:
             if len(artists_not_found):
-               self._write_not_found_data(artists_not_found, 'artists_not_found.txt')
+                self._write_not_found_data(artists_not_found, 'artists_not_found.txt')
 
-    def updateAlbumsInFile(self, file_path, write_not_found= True):
+    def updateAlbumsInFile(self, file_path, write_not_found=True):
         verified_albums, albums_not_found = self.verifyAlbums()
         self._find_or_create_db_file(file_path)
         with open(file_path) as db:
@@ -143,7 +144,7 @@ class getInfoForDB(object):
             if len(albums_not_found):
                 self._write_not_found_data(albums_not_found, 'albums_not_found.txt')
 
-    def updateAlbumOfArtistInFile(self, file_path, write_not_found= True):
+    def updateAlbumOfArtistInFile(self, file_path, write_not_found=True):
         verified_albums, albums_not_found = self.verifyAlbumOfArtist()
         self._find_or_create_db_file(file_path)
         with open(file_path) as db:
@@ -157,6 +158,7 @@ class getInfoForDB(object):
         if write_not_found:
             if len(albums_not_found):
                 self._write_not_found_data(albums_not_found, 'albums_not_found.txt')
+
 
 i = getInfoForDB()
 i.getInfoFromFolder(r'D:\Muzica')

@@ -1,0 +1,12 @@
+certifi==2020.12.5
+chardet==4.0.0
+idna==2.10
+PySide2==5.15.2
+pytube==10.4.1
+requests==2.25.1
+shiboken2==5.15.2
+tinytag==1.5.0
+typing-extensions==3.7.4.3
+Unidecode==1.1.2
+urllib3==1.26.3
+youtube-dl==2021.1.24.1

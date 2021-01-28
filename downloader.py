@@ -1,11 +1,11 @@
 from __future__ import unicode_literals
-import youtube_dl
-import ytdl_config
-from general_utils.methods import check_and_create_folder
 import os
+import re
+import youtube_dl
 from PySide2 import QtCore
 from pytube import Playlist
-import re
+from general_utils.methods import check_and_create_folder
+from constants import DOWNLOAD_FOLDER, ERRORS_FOLDER
 
 
 class DownloadPlaylist(QtCore.QThread, QtCore.QObject):
@@ -33,7 +33,7 @@ class DownloadPlaylist(QtCore.QThread, QtCore.QObject):
         if self._other_options['downloadFolder']:
             check_and_create_folder(self._other_options['downloadFolder'])
         else:
-            check_and_create_folder(ytdl_config.DOWNLOAD_FOLDER)
+            check_and_create_folder(DOWNLOAD_FOLDER)
         download_error = 0
 
         current_index = 0
@@ -82,7 +82,7 @@ class DownloadPlaylist(QtCore.QThread, QtCore.QObject):
                 errors_folder = os.path.join(self._other_options['downloadFolder'], 'errors')
                 check_and_create_folder(errors_folder)
             else:
-                errors_folder = check_and_create_folder(ytdl_config.ERRORS_FOLDER)
+                errors_folder = check_and_create_folder(ERRORS_FOLDER)
 
             if not_accessible_links:
                 file = open(os.path.join(errors_folder, 'not_accessible_links.txt'), 'w')

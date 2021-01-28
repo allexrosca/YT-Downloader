@@ -43,7 +43,7 @@ class YTDownloaderUI(QtWidgets.QWidget):
         for name in name_list:
             buttons_design = 'QPushButton{color:#bfc1c1; ' \
                              'background-color:#07695A; ' \
-                f'font: {font_size}px; ' \
+                             f'font: {font_size}px; ' \
                              'border-radius: 10px;}' \
                              'QPushButton:hover {color:#524d4d; background-color: #0eb59c;}' \
                              'QPushButton:disabled {color:#087060; background-color: #075448;}'
@@ -130,7 +130,7 @@ class YTDownloaderUI(QtWidgets.QWidget):
     def _openFolderLocation(self):
         os.startfile(self._download_folder)
 
-    def _getShortPath(self,path):
+    def _getShortPath(self, path):
         if len(path) > 50:
             short_path = ''
             for i in path.split('/'):
@@ -152,7 +152,7 @@ class YTDownloaderUI(QtWidgets.QWidget):
                     with open('config_data.json', 'w') as config_file:
                         data = {'download_location': str(path),
                                 'download_location_short': path_short}
-                        json.dump(data, config_file, indent= 4)
+                        json.dump(data, config_file, indent=4)
                 else:
                     with open('config_data.json', 'r+') as config_file:
                         data = json.load(config_file)
@@ -169,7 +169,7 @@ class YTDownloaderUI(QtWidgets.QWidget):
         self._download_error_found = False
         self._download_warning_found = False
         self._userInputArea.clear()
-        self._userInputArea.setTextColor(QtGui.QColor( 14, 234, 228, 250 ))
+        self._userInputArea.setTextColor(QtGui.QColor(14, 234, 228, 250))
         self._setButtonEnableDisable(['Download', 'Reset', 'Change Folder', 'Exit'], True)
         self._userInputArea.setReadOnly(False)
 
@@ -184,7 +184,7 @@ class YTDownloaderUI(QtWidgets.QWidget):
 
     def _download(self):
         self._user_input = list(filter(None, self._userInputArea.toPlainText().split('\n')))
-        self._user_input = sorted(set(self._user_input),key=self._user_input.index)
+        self._user_input = sorted(set(self._user_input), key=self._user_input.index)
         if len(self._user_input) > 0:
             self._userInputArea.setReadOnly(True)
             self._userInputArea.setText('\n\n'.join([i for i in self._user_input]))
@@ -246,7 +246,6 @@ class YTDownloaderUI(QtWidgets.QWidget):
             self._user_input_colored[self._current_index] = current_link_status
             self._userInputArea.setHtml('<br><br>'.join([i for i in self._user_input_colored]))
 
-
     def _colorWhenDownloadStarted(self, index):
         self._current_index = index
         self._current_link = self._user_input[index]
@@ -297,7 +296,7 @@ class YTDownloaderUI(QtWidgets.QWidget):
             self._download_interrupted = False
 
         self._setButtonEnableDisable(['Stop', 'Skip'], False)
-        self._setButtonEnableDisable(['Reset','Exit'], True)
+        self._setButtonEnableDisable(['Reset', 'Exit'], True)
 
         if self._download_warning_found:
             self._downloader_output.append(self._download_warning_found)
