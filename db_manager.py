@@ -142,8 +142,9 @@ class DBManager:
         self._update_albums_in_db(file_path, write_not_found, verified_albums, albums_not_found)
 
 
-i = DBManager()
-i.get_info_from_dir(r'D:\Music')
-i.update_artists_in_file('db.json', False)
-i.update_artist_albums_in_file('db.json', False)
-i.update_albums_in_file('db.json', False)
+if __name__ == '__main__':
+    i = DBManager()
+    i.get_info_from_dir(r'D:\Music')
+    i.update_artists_in_file('db.json', False)
+    i.update_artist_albums_in_file('db.json', False)
+    i.update_albums_in_file('db.json', False)
