@@ -1,8 +1,6 @@
 import requests
-import unidecode
-import re
-from iTunes.utils.methods import full_match_artist_song_in_tracks, full_match_artist_album_in_tracks
 from general_utils.methods import normalize_string
+from utils.methods import full_match_artist_song_in_tracks, full_match_artist_album_in_tracks
 
 
 class iTunesSearch:
@@ -67,7 +65,7 @@ class iTunesSearch:
 
     def search_artist_song(self, artist, song, max_tracks_to_search=None):
         full_match = False
-        full_match_index = False
+        full_match_index = None
 
         max_tracks_to_search, artist_for_search, artist_song_for_search = self._normalize_search_items(max_tracks_to_search, artist, song)
 
@@ -88,7 +86,7 @@ class iTunesSearch:
 
     def search_artist_album(self, artist=None, album=None, max_tracks_to_search=None):
         full_match = False
-        full_match_index = False
+        full_match_index = None
 
         max_tracks_to_search, artist_for_search, artist_album_for_search = self._normalize_search_items(max_tracks_to_search, artist, album)
 
