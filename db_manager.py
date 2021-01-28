@@ -1,11 +1,11 @@
 import os
-from tinytag import TinyTag
-from itunes.itunes_search import iTunesSearch
 import json
 import unidecode
+from tinytag import TinyTag
+from itunes.itunes_search import iTunesSearch
 
 
-class getInfoForDB(object):
+class DBManager:
     def __init__(self, accepted_file_types=None):
         if accepted_file_types is None:
             self._accepted_file_types = ['.mp3', '.mp4']
@@ -13,20 +13,16 @@ class getInfoForDB(object):
         self._albums = set()
         self._artists_and_albums = set()
 
-    def getArtits(self):
-        return self._artists
-
-    def getAlbums(self):
-        return self._albums
-
-    def _normalizeString(self, string):
-        string = unidecode.unidecode(string.lower())
-        string = string.strip()
-        return string
-
-    def _write_in_json_file(self, data, file_path):
+    @staticmethod
+    def _write_in_json_file(data, file_path):
         with open(file_path, 'w') as f:
             json.dump(data, f, indent=2)
+
+    @staticmethod
+    def _find_or_create_file(file_path):
+        if not os.path.isfile(file_path):
+            file = open(file_path, 'w')
+            file.close()
 
     def _find_or_create_db_file(self, file_path):
         if not os.path.isfile(file_path) or os.path.getsize(file_path) == 0:
@@ -37,32 +33,40 @@ class getInfoForDB(object):
         else:
             with open(file_path) as file:
                 file_data = json.load(file)
-                if not 'artists' in file_data:
+                if 'artists' not in file_data:
                     file_data.update({'artists': []})
-                if not 'albums' in file_data:
+                if 'albums' not in file_data:
                     file_data.update({'albums': []})
             self._write_in_json_file(file_data, file_path)
 
-    def _find_or_create_file(self, file_path):
-        if not os.path.isfile(file_path):
-            file = open(file_path, 'w')
-            file.close()
-
     def _write_not_found_data(self, data, file_path):
         self._find_or_create_file(file_path)
-        file = open(file_path, 'r')
-        info_to_write = file.read().split('\n')
-        file.close()
-        file = open(file_path, 'w')
-        for i in data:
-            info_to_write.append(i)
-        info_to_write = set(filter(None, info_to_write))
+        with open(file_path, 'r') as file:
+            info_to_write = file.read().split('\n')
 
-        for i in info_to_write:
-            file.write(str(unidecode.unidecode(i)) + '\n')
-        file.close()
+        with open(file_path, 'w') as file:
+            for info in data:
+                info_to_write.append(info)
+            info_to_write = set(filter(None, info_to_write))
 
-    def getInfoFromFolder(self, folder_path):
+            for info in info_to_write:
+                file.write(str(unidecode.unidecode(info)) + '\n')
+
+    def _update_albums_in_db(self, file_path, write_not_found, verified_albums, albums_not_found):
+        self._find_or_create_db_file(file_path)
+        with open(file_path) as db:
+            db_info = json.load(db)
+            albums = db_info['albums']
+            for album in verified_albums:
+                if album not in albums:
+                    albums.append(unidecode.unidecode(album))
+        self._write_in_json_file(db_info, file_path)
+
+        if write_not_found:
+            if len(albums_not_found):
+                self._write_not_found_data(albums_not_found, 'albums_not_found.txt')
+
+    def get_info_from_dir(self, folder_path):
         for subdir, dirs, files in os.walk(folder_path):
             for file in files:
                 song = os.path.join(subdir, file)
@@ -76,9 +80,9 @@ class getInfoForDB(object):
                         self._artists_and_albums.add((tags.artist, tags.album))
         self._artists = set(filter(None, self._artists))
         self._albums = set(filter(None, self._albums))
-        self._artists_and_albums = set(filter(None, self._artists_and_albums))  # nu e bun nush de ce
+        self._artists_and_albums = set(filter(None, self._artists_and_albums))  # TODO: something doesn't work here
 
-    def verifyArtists(self):
+    def verify_artists(self):
         artists_found = set()
         artists_not_found = set()
         for artist_name in self._artists:
@@ -88,9 +92,9 @@ class getInfoForDB(object):
                 artists_found.add(artist_name)
             else:
                 artists_not_found.add(artist_name)
-        return (artists_found, artists_not_found)
+        return artists_found, artists_not_found
 
-    def verifyAlbums(self):
+    def verify_albums(self):
         albums_found = set()
         albums_not_found = set()
         for albums_name in self._albums:
@@ -100,9 +104,9 @@ class getInfoForDB(object):
                 albums_found.add(albums_name)
             else:
                 albums_not_found.add(albums_name)
-        return (albums_found, albums_not_found)
+        return albums_found, albums_not_found
 
-    def verifyAlbumOfArtist(self):
+    def verify_artist_album(self):
         albums_found = set()
         albums_not_found = set()
         for artist_name, albums_name in self._artists_and_albums:
@@ -112,10 +116,10 @@ class getInfoForDB(object):
                 albums_found.add(albums_name)
             else:
                 albums_not_found.add(albums_name)
-        return (albums_found, albums_not_found)
+        return albums_found, albums_not_found
 
-    def updateArtistsInFile(self, file_path, write_not_found=True):
-        verified_artists, artists_not_found = self.verifyArtists()
+    def update_artists_in_file(self, file_path, write_not_found=True):
+        verified_artists, artists_not_found = self.verify_artists()
         self._find_or_create_db_file(file_path)
         with open(file_path) as db:
             db_info = json.load(db)
@@ -129,39 +133,17 @@ class getInfoForDB(object):
             if len(artists_not_found):
                 self._write_not_found_data(artists_not_found, 'artists_not_found.txt')
 
-    def updateAlbumsInFile(self, file_path, write_not_found=True):
-        verified_albums, albums_not_found = self.verifyAlbums()
-        self._find_or_create_db_file(file_path)
-        with open(file_path) as db:
-            db_info = json.load(db)
-            albums = db_info['albums']
-            for album in verified_albums:
-                if album not in albums:
-                    albums.append(unidecode.unidecode(album))
-        self._write_in_json_file(db_info, file_path)
+    def update_albums_in_file(self, file_path, write_not_found=True):
+        verified_albums, albums_not_found = self.verify_albums()
+        self._update_albums_in_db(file_path, write_not_found, verified_albums, albums_not_found)
 
-        if write_not_found:
-            if len(albums_not_found):
-                self._write_not_found_data(albums_not_found, 'albums_not_found.txt')
-
-    def updateAlbumOfArtistInFile(self, file_path, write_not_found=True):
-        verified_albums, albums_not_found = self.verifyAlbumOfArtist()
-        self._find_or_create_db_file(file_path)
-        with open(file_path) as db:
-            db_info = json.load(db)
-            albums = db_info['albums']
-            for album in verified_albums:
-                if album not in albums:
-                    albums.append(unidecode.unidecode(album))
-        self._write_in_json_file(db_info, file_path)
-
-        if write_not_found:
-            if len(albums_not_found):
-                self._write_not_found_data(albums_not_found, 'albums_not_found.txt')
+    def update_artist_albums_in_file(self, file_path, write_not_found=True):
+        verified_albums, albums_not_found = self.verify_artist_album()
+        self._update_albums_in_db(file_path, write_not_found, verified_albums, albums_not_found)
 
 
-i = getInfoForDB()
-i.getInfoFromFolder(r'D:\Muzica')
-i.updateArtistsInFile('db.json', False)
-i.updateAlbumOfArtistInFile('db.json', False)
-i.updateAlbumsInFile('db.json', False)
+i = DBManager()
+i.get_info_from_dir(r'D:\Music')
+i.update_artists_in_file('db.json', False)
+i.update_artist_albums_in_file('db.json', False)
+i.update_albums_in_file('db.json', False)
