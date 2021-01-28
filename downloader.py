@@ -5,7 +5,7 @@ import youtube_dl
 from PySide2 import QtCore
 from pytube import Playlist
 from general_utils.methods import check_and_create_folder
-from constants import DOWNLOAD_FOLDER, ERRORS_FOLDER
+from general_utils.constants import DOWNLOAD_FOLDER, ERRORS_FOLDER
 
 
 class DownloadPlaylist(QtCore.QThread, QtCore.QObject):
