@@ -1,14 +1,13 @@
 from __future__ import unicode_literals
 import os
-import re
-import youtube_dl
 from PySide2 import QtCore
 from pytube import Playlist
-from general_utils.methods import check_and_create_folder
+from general_utils.methods import check_and_create_folder, cast_to_list
 from general_utils.constants import DOWNLOAD_FOLDER, ERRORS_FOLDER
+from youtube_dl import YoutubeDL
 
 
-class DownloadPlaylist(QtCore.QThread, QtCore.QObject):
+class PlaylistDownloader(QtCore.QThread, QtCore.QObject):
     playlist_length = QtCore.Signal(int)
     playlist_link_index = QtCore.Signal(int)
     current_link_index = QtCore.Signal(int)
@@ -27,44 +26,52 @@ class DownloadPlaylist(QtCore.QThread, QtCore.QObject):
         self.terminate_thread = False
         self.songs_number = 0
 
+    def download(self, link, ydl_opts=None):
+        if ydl_opts is None:
+            ydl_opts = self.ydl_opts
+
+        with YoutubeDL(ydl_opts) as ydl:
+            try:
+                ydl.cache.remove()
+                ydl.download(cast_to_list(link))
+            except Exception as e:
+                return False, str(e)
+        return True, None
+
+    def _prepare_link(self, link):
+        if str(link).find('playlist') != -1 or str(link).find('list') != -1:
+            self.playlist_link_index.emit(self.download_content.index(link) + 1)
+            link = Playlist(link)
+            # link._video_regex = re.compile(r"\"url\":\"(/watch\?v=[\w-]*)")  # TODO: if everything works without this line, delete it in the future
+            self.playlist_length.emit(len(link))
+            return link
+        return [link]
+
     def run(self):
-        not_accessible_links = []
+        current_index = 0
         download_error_flag = False
+        not_accessible_links = []
+
         if self._other_options['downloadFolder']:
             check_and_create_folder(self._other_options['downloadFolder'])
         else:
             check_and_create_folder(DOWNLOAD_FOLDER)
-        download_error = 0
 
-        current_index = 0
         for link in self.download_content:
             if self.terminate_thread:
                 break
 
             self.current_link_index.emit(current_index)
 
-            if str(link).find('playlist') != -1 or str(link).find('list') != -1:
-                self.playlist_link_index.emit(self.download_content.index(link) + 1)
-                link = Playlist(link)
-                link._video_regex = re.compile(r"\"url\":\"(/watch\?v=[\w-]*)")
-                self.playlist_length.emit(len(link))
-            else:
-                link = [link]
-
-            for song_link in link:
+            for song_link in self._prepare_link(link):
                 if self.terminate_thread:
                     break
-                self.current_song = song_link
-                with youtube_dl.YoutubeDL(self.ydl_opts) as ydl:
-                    try:
-                        ydl.cache.remove()
-                        ydl.download([song_link])
-                    except Exception as e:
-                        download_error_flag = True
-                        download_error = str(e)
 
-                if download_error:
-                    not_accessible_links.append((song_link, download_error))
+                self.current_song = song_link
+                status, error = self.download(song_link, self._ydl_opts)
+
+                if not status:
+                    not_accessible_links.append((song_link, error))
 
             if download_error_flag:
                 self.download_status.emit(False)
@@ -73,6 +80,7 @@ class DownloadPlaylist(QtCore.QThread, QtCore.QObject):
 
             if self.terminate_thread:
                 break
+
             current_index = current_index + 1
             download_error_flag = False
 

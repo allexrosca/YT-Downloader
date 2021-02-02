@@ -5,7 +5,7 @@ import json
 from PySide2 import QtCore, QtWidgets, QtGui
 from PySide2.QtWidgets import QFileDialog, QCheckBox, QTextEdit, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QGridLayout
 from ytdl_config import CONFIG, MyLogger
-from downloader import DownloadPlaylist
+from downloader import PlaylistDownloader
 
 
 class YTDownloaderUI(QtWidgets.QWidget):
@@ -220,7 +220,7 @@ class YTDownloaderUI(QtWidgets.QWidget):
             self._ytdl_opts['logger'] = logger
             self._ytdl_opts['outtmpl'] = f'{self._download_folder}/%(title)s.%(ext)s'
 
-            self.thread = DownloadPlaylist(self._user_input, self._ytdl_opts, {'downloadFolder': self._download_folder})
+            self.thread = PlaylistDownloader(self._user_input, self._ytdl_opts, {'downloadFolder': self._download_folder})
             self._setButtonEnableDisable(['Download', 'Reset', 'Change Folder', 'Exit'], False)
             self.thread.finished.connect(self._whenDownloadFinished)
 
