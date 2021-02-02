@@ -68,7 +68,7 @@ class PlaylistDownloader(QtCore.QThread, QtCore.QObject):
                     break
 
                 self.current_song = song_link
-                status, error = self.download(song_link, self._ydl_opts)
+                status, error = self.download(song_link)
 
                 if not status:
                     not_accessible_links.append((song_link, error))
