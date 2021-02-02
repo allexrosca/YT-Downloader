@@ -52,7 +52,7 @@ class MyLogger(QtCore.QObject):
             file.write(str(msg) + '\n')
 
         if not self._warning_found:
-            self.message_signal.emit('\nWarnings can be found in \errors\warnings.txt file\n')
+            self.message_signal.emit('\nWarnings can be found in \\errors\\warnings.txt file\n')
             self._warning_found = True
 
     def error(self, msg):
@@ -62,10 +62,11 @@ class MyLogger(QtCore.QObject):
             file.write(str(msg) + '\n')
 
         if not self._error_found:
-            self.message_signal.emit('\nErrors can be found in \errors\\unrecognised_errors.txt file\n')
+            self.message_signal.emit('\nErrors can be found in \\errors\\unrecognised_errors.txt file\n')
             self._error_found = True
 
 
+# noinspection SpellCheckingInspection
 CONFIG = {
     'format': 'bestaudio/best',
     'postprocessors': [
