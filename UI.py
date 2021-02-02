@@ -11,7 +11,7 @@ from downloader import PlaylistDownloader
 class YTDownloaderUI(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
-        self._save_download_location = False
+        self._save_download_location = None
 
         if os.path.exists('config_data.json'):
             with open('config_data.json', 'r+') as config_file:
@@ -25,12 +25,12 @@ class YTDownloaderUI(QtWidgets.QWidget):
             self._location_saved = False
 
         self.buttons = {}
-        self._initUI()
+        self._init_ui()
         self._download_interrupted = False
         self._download_warning_found = False
         self._download_error_found = False
 
-    def _createButton(self, name_list, button_size=(), font_size=16):
+    def _create_button(self, name_list, button_size=(), font_size=16):
         if button_size:
             width = int(button_size[0])
             height = int(button_size[1])
@@ -58,7 +58,7 @@ class YTDownloaderUI(QtWidgets.QWidget):
                 self._userInputArea.append('')
         return super().eventFilter(obj, event)
 
-    def _initUI(self):
+    def _init_ui(self):
         self.setWindowTitle('Youtube Downloader')
         self.setFont(QtGui.QFont("Calibri", 10))
         ui_theme = QtGui.QPalette()
@@ -73,8 +73,8 @@ class YTDownloaderUI(QtWidgets.QWidget):
         self._title_layout.addWidget(self._title)
         self._title_layout.setContentsMargins(0, 20, 0, 40)
 
-        self._createButton(['Download', 'Stop', 'Skip', 'Reset', 'Exit'])
-        self._setButtonEnableDisable(['Stop', 'Skip'], False)
+        self._create_button(['Download', 'Stop', 'Skip', 'Reset', 'Exit'])
+        self._set_button_status(['Stop', 'Skip'], False)
         self._button_layout = QVBoxLayout()
         for button in self.buttons.values():
             self._button_layout.addWidget(button)
@@ -103,8 +103,8 @@ class YTDownloaderUI(QtWidgets.QWidget):
             self._save_download_location.setFont(QtGui.QFont("Calibri", int((self.width() + self.height()) / 120)))
             self._save_download_location.setStyleSheet("QCheckBox {color: #02998f;}")
 
-        self._createButton(['Change Folder'], (self.width() / 5, self.height() / 13), 13)
-        self._createButton(['Open Download Folder'], (self.width() / 4, self.height() / 13))
+        self._create_button(['Change Folder'], (self.width() / 5, self.height() / 13), 13)
+        self._create_button(['Open Download Folder'], (self.width() / 4, self.height() / 13))
         self._download_folder_layout = QGridLayout()
         self._download_folder_layout.addWidget(self.buttons['Open Download Folder'], 1, 1)
         self._download_folder_layout.addWidget(self.buttons['Change Folder'], 1, 2)
@@ -123,30 +123,17 @@ class YTDownloaderUI(QtWidgets.QWidget):
         self.setLayout(self._main_layout)
 
         self.buttons['Download'].clicked.connect(self._download)
-        self.buttons['Reset'].clicked.connect(self._resetTextArea)
-        self.buttons['Change Folder'].clicked.connect(self._selectDownloadFolder)
-        self.buttons['Open Download Folder'].clicked.connect(self._openFolderLocation)
+        self.buttons['Reset'].clicked.connect(self._reset_text_area)
+        self.buttons['Change Folder'].clicked.connect(self._select_download_folder)
+        self.buttons['Open Download Folder'].clicked.connect(self._open_folder_location)
 
-    def _openFolderLocation(self):
+    def _open_folder_location(self):
         os.startfile(self._download_folder)
 
-    def _getShortPath(self, path):
-        if len(path) > 50:
-            short_path = ''
-            for i in path.split('/'):
-                if len(short_path + i + '\\') > 40:
-                    break
-                short_path = short_path + i + '\\'
-
-            path = short_path + '...\\' + path.split('/')[-1]
-            return path
-        else:
-            return path.replace('/', '\\')
-
-    def _selectDownloadFolder(self):
+    def _select_download_folder(self):
         path = str(QFileDialog.getExistingDirectory(self))
         if path != '':
-            path_short = self._getShortPath(str(path))
+            path_short = self.get_short_path(str(path))
             if (self._save_download_location and self._save_download_location.isChecked()) or self._location_saved:
                 if not os.path.exists('config_data.json'):
                     with open('config_data.json', 'w') as config_file:
@@ -165,12 +152,12 @@ class YTDownloaderUI(QtWidgets.QWidget):
             self._download_folder_to_show = path_short
             self._download_folder_location.setText(path_short)
 
-    def _resetTextArea(self):
+    def _reset_text_area(self):
         self._download_error_found = False
         self._download_warning_found = False
         self._userInputArea.clear()
         self._userInputArea.setTextColor(QtGui.QColor(14, 234, 228, 250))
-        self._setButtonEnableDisable(['Download', 'Reset', 'Change Folder', 'Exit'], True)
+        self._set_button_status(['Download', 'Reset', 'Change Folder', 'Exit'], True)
         self._userInputArea.setReadOnly(False)
 
         if self._text_area_layout.itemAt(1):
@@ -178,7 +165,7 @@ class YTDownloaderUI(QtWidgets.QWidget):
             downloader_output_area = self._text_area_layout.takeAt(1)
             downloader_output_area.widget().deleteLater()
 
-    def _setButtonEnableDisable(self, buttons_list, flag):
+    def _set_button_status(self, buttons_list, flag):
         for button in buttons_list:
             self.buttons[button].setEnabled(flag)
 
@@ -198,7 +185,7 @@ class YTDownloaderUI(QtWidgets.QWidget):
                         self._location_saved = True
 
                 if self._download_folder_layout.itemAt(4):
-                    self._save_download_location = False
+                    self._save_download_location = None
                     checkbox = self._download_folder_layout.takeAt(4)
                     checkbox.widget().deleteLater()
 
@@ -215,28 +202,30 @@ class YTDownloaderUI(QtWidgets.QWidget):
                 self._downloader_output.setAlignment(QtGui.Qt.AlignCenter)
 
             logger = MyLogger(download_folder=self._download_folder)
-            logger.message_signal.connect(self._showProgress)
+            logger.message_signal.connect(self._show_progress)
+            # noinspection SpellCheckingInspection
             self._ytdl_opts = CONFIG
             self._ytdl_opts['logger'] = logger
+            # noinspection SpellCheckingInspection
             self._ytdl_opts['outtmpl'] = f'{self._download_folder}/%(title)s.%(ext)s'
 
             self.thread = PlaylistDownloader(self._user_input, self._ytdl_opts, {'downloadFolder': self._download_folder})
-            self._setButtonEnableDisable(['Download', 'Reset', 'Change Folder', 'Exit'], False)
-            self.thread.finished.connect(self._whenDownloadFinished)
+            self._set_button_status(['Download', 'Reset', 'Change Folder', 'Exit'], False)
+            self.thread.finished.connect(self._when_download_finished)
 
             self._link_index = 0
-            self.thread.playlist_link_index.connect(self._getLinkIndex)
-            self.thread.playlist_length.connect(self._showPlaylistLength)
+            self.thread.playlist_link_index.connect(self._get_link_index)
+            self.thread.playlist_length.connect(self._show_playlist_length)
             self._user_input_colored = self._user_input
-            self.thread.current_link_index.connect(self._colorWhenDownloadStarted)
-            self.thread.download_status.connect(self._colorDownloadStatus)
+            self.thread.current_link_index.connect(self._color_when_download_started)
+            self.thread.download_status.connect(self._color_download_status)
 
             self.thread.start()
-            self._setButtonEnableDisable(['Stop', 'Skip'], True)
+            self._set_button_status(['Stop', 'Skip'], True)
             if self.thread.isRunning():
-                self.buttons['Stop'].clicked.connect(self._terminateThread)
+                self.buttons['Stop'].clicked.connect(self._terminate_thread)
 
-    def _colorDownloadStatus(self, flag):
+    def _color_download_status(self, flag):
         if flag:
             current_link_status = '<span style=\"color:#00b515;\">' + self._current_link + '</span>'
             self._user_input_colored[self._current_index] = current_link_status
@@ -246,17 +235,17 @@ class YTDownloaderUI(QtWidgets.QWidget):
             self._user_input_colored[self._current_index] = current_link_status
             self._userInputArea.setHtml('<br><br>'.join([i for i in self._user_input_colored]))
 
-    def _colorWhenDownloadStarted(self, index):
+    def _color_when_download_started(self, index):
         self._current_index = index
         self._current_link = self._user_input[index]
         current_link_status = '<span style=\"color:#fffb00;\">' + self._current_link + '</span>'
         self._user_input_colored[index] = current_link_status
         self._userInputArea.setHtml('<br><br>'.join([i for i in self._user_input_colored]))
 
-    def _getLinkIndex(self, text):
+    def _get_link_index(self, text):
         self._link_index = int(text)
 
-    def _showPlaylistLength(self, text):
+    def _show_playlist_length(self, text):
         order = {1: '1st', 2: '2nd', 3: '3rd'}
         if self._link_index > 3:
             link_index = f'{self._link_index}th'
@@ -265,7 +254,7 @@ class YTDownloaderUI(QtWidgets.QWidget):
 
         self._downloader_output.append(f'Downloading playlist with {str(text)} songs (found at {link_index} link)\n')
 
-    def _showProgress(self, text):
+    def _show_progress(self, text):
         if text.find('Warnings can be found') != -1:
             self._download_warning_found = text
         elif text.find('Errors can be found') != -1:
@@ -273,16 +262,16 @@ class YTDownloaderUI(QtWidgets.QWidget):
         elif not self._download_interrupted:
             self._downloader_output.append(text)
 
-    def _terminateThread(self):
+    def _terminate_thread(self):
         self.thread.terminate_thread = True
         self._downloader_output.append('\n=== Download interrupted ===')
-        self._setButtonEnableDisable(['Stop', 'Skip'], False)
+        self._set_button_status(['Stop', 'Skip'], False)
         self._download_interrupted = True
         self._file_to_delete = self.thread.current_song
         self._downloader_output.append('\n=== Closing the process, wait ===')
 
-    def _whenDownloadFinished(self):
-        self._user_input_colored = ''
+    def _when_download_finished(self):
+        self._user_input_colored = None
         if self._download_interrupted and self.thread.isFinished():
             self._downloader_output.append('\n=== Removing temp files ===')
             with youtube_dl.YoutubeDL(self._ytdl_opts) as ydl:
@@ -295,8 +284,8 @@ class YTDownloaderUI(QtWidgets.QWidget):
             self._downloader_output.append('\n=== Temp files removed===')
             self._download_interrupted = False
 
-        self._setButtonEnableDisable(['Stop', 'Skip'], False)
-        self._setButtonEnableDisable(['Reset', 'Exit'], True)
+        self._set_button_status(['Stop', 'Skip'], False)
+        self._set_button_status(['Reset', 'Exit'], True)
 
         if self._download_warning_found:
             self._downloader_output.append(self._download_warning_found)
