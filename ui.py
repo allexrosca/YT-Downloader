@@ -6,6 +6,7 @@ from PySide2 import QtCore, QtWidgets, QtGui
 from PySide2.QtWidgets import QFileDialog, QCheckBox, QTextEdit, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QGridLayout
 from ytdl_config import CONFIG, MyLogger
 from downloader import PlaylistDownloader
+from general_utils.methods import get_short_path
 
 
 class YTDownloaderUI(QtWidgets.QWidget):
@@ -58,7 +59,7 @@ class YTDownloaderUI(QtWidgets.QWidget):
                 self._userInputArea.append('')
         return super().eventFilter(obj, event)
 
-    def _init_ui(self):
+    def _set_initial_settings(self):
         self.setWindowTitle('Youtube Downloader')
         self.setFont(QtGui.QFont("Calibri", 10))
         ui_theme = QtGui.QPalette()
@@ -67,21 +68,30 @@ class YTDownloaderUI(QtWidgets.QWidget):
         ui_theme.setColor(QtGui.QPalette.Text, QtGui.QColor(194, 234, 216))
         self.setPalette(ui_theme)
 
+    def _create_title(self):
         self._title = QLabel('From Youtube to Mp3 (v0.0.1)')
         self._title.setFont(QtGui.QFont("Calibri", int((self.width() + self.height()) / 46)))
+
         self._title_layout = QHBoxLayout()
         self._title_layout.addWidget(self._title)
         self._title_layout.setContentsMargins(0, 20, 0, 40)
 
+    def _create_buttons(self):
         self._create_button(['Download', 'Stop', 'Skip', 'Reset', 'Exit'])
         self._set_button_status(['Stop', 'Skip'], False)
+
         self._button_layout = QVBoxLayout()
         for button in self.buttons.values():
             self._button_layout.addWidget(button)
         self._button_layout.setContentsMargins(25, 0, 50, 10)
 
+        self._create_button(['Change Folder'], (self.width() / 5, self.height() / 13), 13)
+        self._create_button(['Open Download Folder'], (self.width() / 4, self.height() / 13))
+
+    def _create_user_input_text_area(self):
         self._userInputArea = QTextEdit(self)
         self._userInputArea.setPlaceholderText("Paste your links here.\n")
+        # noinspection SpellCheckingInspection
         self._userInputArea.setStyleSheet('color:#0eeae4; background-color:#43565c; border-radius: 7px')
         self._userInputArea.installEventFilter(self)
 
@@ -89,6 +99,7 @@ class YTDownloaderUI(QtWidgets.QWidget):
         self._text_area_layout.addWidget(self._userInputArea)
         self._text_area_layout.setContentsMargins(25, 10, 50, 20)
 
+    def _create_download_folder_info(self):
         self._download_folder_label = QLabel('Download folder:')
         self._download_folder_label.setFont(QtGui.QFont("Calibri", int((self.width() + self.height()) / 100), QtGui.QFont.Bold))
         self._download_folder_label.setStyleSheet("QLabel {color: #a4d1de;}")
@@ -98,13 +109,12 @@ class YTDownloaderUI(QtWidgets.QWidget):
         self._download_folder_location.setFont(QtGui.QFont("Calibri", int((self.width() + self.height()) / 100)))
         self._download_folder_location.setStyleSheet("QLabel {color: #02998f;}")
 
-        if not self._location_saved:
-            self._save_download_location = QCheckBox('save download location path')
-            self._save_download_location.setFont(QtGui.QFont("Calibri", int((self.width() + self.height()) / 120)))
-            self._save_download_location.setStyleSheet("QCheckBox {color: #02998f;}")
+    def _create_save_download_location_checkbox(self):
+        self._save_download_location = QCheckBox('save download location path')
+        self._save_download_location.setFont(QtGui.QFont("Calibri", int((self.width() + self.height()) / 120)))
+        self._save_download_location.setStyleSheet("QCheckBox {color: #02998f;}")
 
-        self._create_button(['Change Folder'], (self.width() / 5, self.height() / 13), 13)
-        self._create_button(['Open Download Folder'], (self.width() / 4, self.height() / 13))
+    def _create_download_folder_layout(self):
         self._download_folder_layout = QGridLayout()
         self._download_folder_layout.addWidget(self.buttons['Open Download Folder'], 1, 1)
         self._download_folder_layout.addWidget(self.buttons['Change Folder'], 1, 2)
@@ -114,6 +124,7 @@ class YTDownloaderUI(QtWidgets.QWidget):
             self._download_folder_layout.addWidget(self._save_download_location, 2, 2, 1, -1)
         self._download_folder_layout.setContentsMargins(25, 0, 0, 0)
 
+    def _create_main_layout(self):
         self._main_layout = QGridLayout()
         self._main_layout.addLayout(self._title_layout, 1, 1, 1, -1, alignment=QtCore.Qt.AlignCenter)
         self._main_layout.addLayout(self._text_area_layout, 2, 1)
@@ -121,6 +132,19 @@ class YTDownloaderUI(QtWidgets.QWidget):
         self._main_layout.addLayout(self._download_folder_layout, 3, 1, alignment=QtCore.Qt.AlignLeft)
         self._main_layout.setContentsMargins(20, 20, 20, 20)
         self.setLayout(self._main_layout)
+
+    def _init_ui(self):
+        self._set_initial_settings()
+        self._create_title()
+        self._create_buttons()
+        self._create_user_input_text_area()
+        self._create_download_folder_info()
+
+        if not self._location_saved:
+            self._create_save_download_location_checkbox()
+
+        self._create_download_folder_layout()
+        self._create_main_layout()
 
         self.buttons['Download'].clicked.connect(self._download)
         self.buttons['Reset'].clicked.connect(self._reset_text_area)
@@ -133,7 +157,7 @@ class YTDownloaderUI(QtWidgets.QWidget):
     def _select_download_folder(self):
         path = str(QFileDialog.getExistingDirectory(self))
         if path != '':
-            path_short = self.get_short_path(str(path))
+            path_short = get_short_path(str(path))
             if (self._save_download_location and self._save_download_location.isChecked()) or self._location_saved:
                 if not os.path.exists('config_data.json'):
                     with open('config_data.json', 'w') as config_file:
@@ -193,6 +217,7 @@ class YTDownloaderUI(QtWidgets.QWidget):
                 self._downloader_output = QTextEdit(self)
                 self._downloader_output.setMaximumSize(int(ctypes.windll.user32.GetSystemMetrics(0)), int(self.height() - self.height() / 1.45))
                 self._downloader_output.setReadOnly(True)
+                # noinspection SpellCheckingInspection
                 self._downloader_output.setStyleSheet('color:#0eeae4; background-color:#43565c; border-radius: 7px')
                 self._downloader_output.setAlignment(QtGui.Qt.AlignCenter)
                 self._text_area_layout.addWidget(self._downloader_output)
@@ -209,7 +234,7 @@ class YTDownloaderUI(QtWidgets.QWidget):
             # noinspection SpellCheckingInspection
             self._ytdl_opts['outtmpl'] = f'{self._download_folder}/%(title)s.%(ext)s'
 
-            self.thread = PlaylistDownloader(self._user_input, self._ytdl_opts, {'downloadFolder': self._download_folder})
+            self.thread = PlaylistDownloader(self._user_input, self._ytdl_opts, other_options={'downloadFolder': self._download_folder})
             self._set_button_status(['Download', 'Reset', 'Change Folder', 'Exit'], False)
             self.thread.finished.connect(self._when_download_finished)
 

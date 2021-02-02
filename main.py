@@ -1,7 +1,7 @@
 import sys
 import ctypes
 from PySide2 import QtWidgets
-from UI import YTDownloaderUI
+from ui import YTDownloaderUI
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication([])
