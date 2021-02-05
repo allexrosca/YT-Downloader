@@ -4,10 +4,9 @@ import youtube_dl
 import json
 from PySide2 import QtCore, QtWidgets, QtGui
 from PySide2.QtWidgets import QFileDialog, QCheckBox, QTextEdit, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QGridLayout
-from downloader_logger import DownloadLogger
+from downloader_logger import DownloadLogger, CONFIG
 from downloader import PlaylistDownloader
 from general_utils.methods import get_short_path
-from general_utils.constants import CONFIG
 
 
 class YTDownloaderUI(QtWidgets.QWidget):

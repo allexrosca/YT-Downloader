@@ -1,7 +1,7 @@
 from general_utils.methods import check_and_create_folder
 import os
 from PySide2 import QtCore
-from general_utils.constants import ERRORS_FOLDER
+from general_utils.constants import ERRORS_FOLDER, DOWNLOAD_FOLDER
 
 
 class DownloadLogger(QtCore.QObject):
@@ -64,3 +64,22 @@ class DownloadLogger(QtCore.QObject):
         if not self._error_found:
             self.message_signal.emit('\nErrors can be found in \\errors\\unrecognised_errors.txt file\n')
             self._error_found = True
+
+
+# noinspection SpellCheckingInspection
+CONFIG = {
+    'format': 'bestaudio/best',
+    'postprocessors': [
+        {
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '320'
+        },
+
+        {
+            'key': 'FFmpegMetadata',
+        },
+    ],
+    'prefer_ffmpeg': True,
+    'outtmpl': f'{DOWNLOAD_FOLDER}/%(title)s.%(ext)s',  # TODO: maybe it's better to use alt_title?
+}
