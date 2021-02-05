@@ -1,24 +1,17 @@
-from general_utils.methods import check_and_create_folder
+from general_utils.methods import check_and_create_folder, remove_files_from_directory
 import os
 from PySide2 import QtCore
-from general_utils.constants import ERRORS_FOLDER, DOWNLOAD_FOLDER
 
 
 class DownloadLogger(QtCore.QObject):
     message_signal = QtCore.Signal(str)
 
-    def __init__(self, download_folder=None):
+    def __init__(self, error_folder):
         super().__init__()
-        if download_folder is None:
-            download_folder = ERRORS_FOLDER
         self._warning_found = False
         self._error_found = False
-        self._error_folder = os.path.join(download_folder, 'errors')
-        if os.path.isdir(self._error_folder):
-            for file_object in os.listdir(self._error_folder):
-                file_object_path = os.path.join(self._error_folder, file_object)
-                if os.path.isfile(file_object_path):
-                    os.remove(file_object_path)
+        self._error_folder = error_folder
+        remove_files_from_directory(self._error_folder)
 
     def debug(self, status):
         if status.find('[download] Destination:') != -1:
@@ -46,8 +39,7 @@ class DownloadLogger(QtCore.QObject):
             self.message_signal.emit(message)
 
     def warning(self, msg):
-        if not os.path.isdir(self._error_folder):
-            check_and_create_folder(self._error_folder)
+        check_and_create_folder(self._error_folder)
         with open(os.path.join(self._error_folder, 'warnings.txt'), 'a') as file:
             file.write(str(msg) + '\n')
 
@@ -56,8 +48,7 @@ class DownloadLogger(QtCore.QObject):
             self._warning_found = True
 
     def error(self, msg):
-        if not os.path.isdir(self._error_folder):
-            check_and_create_folder(self._error_folder)
+        check_and_create_folder(self._error_folder)
         with open(os.path.join(self._error_folder, 'unrecognised_errors.txt'), 'a') as file:
             file.write(str(msg) + '\n')
 
@@ -81,5 +72,4 @@ CONFIG = {
         },
     ],
     'prefer_ffmpeg': True,
-    'outtmpl': f'{DOWNLOAD_FOLDER}/%(title)s.%(ext)s',  # TODO: maybe it's better to use alt_title?
 }

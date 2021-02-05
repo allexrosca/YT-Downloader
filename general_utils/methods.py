@@ -3,20 +3,21 @@ import unidecode
 
 
 def check_and_create_folder(path):
-    if not os.path.exists(path):
+    if not os.path.exists(path) or not os.path.isdir(path):
         os.mkdir(path)
+
+
+def remove_files_from_directory(path):
+    if os.path.isdir(path):
+        for file_object in os.listdir(path):
+            file_object_path = os.path.join(path, file_object)
+            if os.path.isfile(file_object_path):
+                os.remove(file_object_path)
 
 
 def normalize_string(string):
     string = unidecode.unidecode(string.lower())
     return string.strip()
-
-
-def cast_to_list(item):
-    if isinstance(item, list):
-        return item
-    else:
-        return [item]
 
 
 def get_short_path(path):
@@ -31,3 +32,7 @@ def get_short_path(path):
         return path
     else:
         return path.replace('/', '\\')
+
+
+def generate_error_folder_path(download_path):
+    return os.path.join(download_path, 'errors')

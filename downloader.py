@@ -2,8 +2,7 @@ from __future__ import unicode_literals
 import os
 from PySide2 import QtCore
 from pytube import Playlist
-from general_utils.methods import check_and_create_folder, cast_to_list
-from general_utils.constants import DOWNLOAD_FOLDER, ERRORS_FOLDER
+from general_utils.methods import check_and_create_folder, generate_error_folder_path
 from youtube_dl import YoutubeDL
 
 
@@ -13,15 +12,13 @@ class PlaylistDownloader(QtCore.QThread, QtCore.QObject):
     current_link_index = QtCore.Signal(int)
     download_status = QtCore.Signal(bool)
 
-    def __init__(self, download_content, ydl_opts=None, other_options=None, *args, **kwargs):
+    def __init__(self, download_content, download_folder, ydl_opts=None, *args, **kwargs):
         QtCore.QThread.__init__(self, *args, **kwargs)
-        if other_options is None:
-            other_options = {}
         if ydl_opts is None:
             ydl_opts = {}
         self.download_content = download_content
         self.ydl_opts = ydl_opts
-        self._other_options = other_options
+        self._download_folder = download_folder
         self.current_song = ''
         self.terminate_thread = False
         self.songs_number = 0
@@ -33,7 +30,14 @@ class PlaylistDownloader(QtCore.QThread, QtCore.QObject):
         with YoutubeDL(ydl_opts) as ydl:
             try:
                 ydl.cache.remove()
-                ydl.download(cast_to_list(link))
+                link_info = ydl.extract_info(link, download=True)
+                if link_info:
+                    if 'title' in link_info and link_info['title']:
+                        pass
+                    else:
+                        pass
+                else:
+                    pass
             except Exception as e:
                 return False, str(e)
         return True, None
@@ -51,11 +55,7 @@ class PlaylistDownloader(QtCore.QThread, QtCore.QObject):
         current_index = 0
         download_error_flag = False
         not_accessible_links = []
-
-        if self._other_options['downloadFolder']:
-            check_and_create_folder(self._other_options['downloadFolder'])
-        else:
-            check_and_create_folder(DOWNLOAD_FOLDER)
+        check_and_create_folder(self._download_folder)
 
         for link in self.download_content:
             if self.terminate_thread:
@@ -85,12 +85,8 @@ class PlaylistDownloader(QtCore.QThread, QtCore.QObject):
             download_error_flag = False
 
         if len(not_accessible_links):
-
-            if self._other_options['downloadFolder']:
-                errors_folder = os.path.join(self._other_options['downloadFolder'], 'errors')
-                check_and_create_folder(errors_folder)
-            else:
-                errors_folder = check_and_create_folder(ERRORS_FOLDER)
+            errors_folder = generate_error_folder_path(self._download_folder)
+            check_and_create_folder(errors_folder)
 
             if not_accessible_links:
                 file = open(os.path.join(errors_folder, 'not_accessible_links.txt'), 'w')

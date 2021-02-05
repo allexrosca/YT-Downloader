@@ -6,7 +6,7 @@ from PySide2 import QtCore, QtWidgets, QtGui
 from PySide2.QtWidgets import QFileDialog, QCheckBox, QTextEdit, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QGridLayout
 from downloader_logger import DownloadLogger, CONFIG
 from downloader import PlaylistDownloader
-from general_utils.methods import get_short_path
+from general_utils.methods import get_short_path, generate_error_folder_path
 
 
 class YTDownloaderUI(QtWidgets.QWidget):
@@ -226,7 +226,7 @@ class YTDownloaderUI(QtWidgets.QWidget):
                 self._downloader_output.clear()
                 self._downloader_output.setAlignment(QtGui.Qt.AlignCenter)
 
-            logger = DownloadLogger(download_folder=self._download_folder)
+            logger = DownloadLogger(error_folder=generate_error_folder_path(self._download_folder))
             logger.message_signal.connect(self._show_progress)
             # noinspection SpellCheckingInspection
             self._ytdl_opts = CONFIG
@@ -234,7 +234,7 @@ class YTDownloaderUI(QtWidgets.QWidget):
             # noinspection SpellCheckingInspection
             self._ytdl_opts['outtmpl'] = f'{self._download_folder}/%(title)s.%(ext)s'
 
-            self.thread = PlaylistDownloader(self._user_input, self._ytdl_opts, other_options={'downloadFolder': self._download_folder})
+            self.thread = PlaylistDownloader(self._user_input, self._download_folder, self._ytdl_opts)
             self._set_button_status(['Download', 'Reset', 'Change Folder', 'Exit'], False)
             self.thread.finished.connect(self._when_download_finished)
 
@@ -305,7 +305,7 @@ class YTDownloaderUI(QtWidgets.QWidget):
                     if file_object.find(current_file['title']) != -1:
                         file_object_path = os.path.join(self._download_folder, file_object)
                         if os.path.isfile(file_object_path):
-                            os.unlink(file_object_path)
+                            os.remove(file_object_path)
             self._downloader_output.append('\n=== Temp files removed===')
             self._download_interrupted = False
 
