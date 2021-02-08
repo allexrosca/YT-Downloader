@@ -34,7 +34,7 @@ class DownloadLogger(QtCore.QObject):
             print(message)
             self.message_signal.emit(message)
         if status.find('[ffmpeg] Adding metadata') != -1:
-            message = 'Convert finished!\n'
+            message = 'Convert finished!'
             print('\t' + message)
             self.message_signal.emit(message)
 

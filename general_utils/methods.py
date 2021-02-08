@@ -36,3 +36,7 @@ def get_short_path(path):
 
 def generate_error_folder_path(download_path):
     return os.path.join(download_path, 'errors')
+
+
+def cast_song_title_to_file_name(song_title):
+    return song_title.replace('\\', '_').replace('/', '_').replace('|', '_') + '.mp3'

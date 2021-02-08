@@ -1,6 +1,6 @@
 import requests
 from general_utils.methods import normalize_string
-from utils.methods import full_match_artist_song_in_tracks, full_match_artist_album_in_tracks
+from .utils.methods import full_match_artist_song_in_tracks, full_match_artist_album_in_tracks
 
 
 class DeezerSearch:
@@ -34,7 +34,7 @@ class DeezerSearch:
             for track in response.json()['data']:
                 if 'artist' in track and 'name' in track['artist']:
                     if normalize_string(track['artist']['name']) == normalize_string(artist):
-                        return True, track
+                        return True, track['artist']['name']
         return False, None
 
     def search_song(self, song, max_tracks_to_search=None):
@@ -44,7 +44,7 @@ class DeezerSearch:
             for track in response.json()['data']:
                 if 'title' in track:
                     if normalize_string(track['title']) == normalize_string(song):
-                        return True, track
+                        return True, track['title']
         return False, None
 
     def search_album(self, album, max_tracks_to_search=None):
@@ -55,7 +55,7 @@ class DeezerSearch:
             for track in response.json()['data']:
                 if 'album' in track and 'title' in track['album']:
                     if normalize_string(track['album']['title']) == normalize_string(album):
-                        return True, track
+                        return True, track['album']['title']
         return False, None
 
     def search_artist_song(self, artist=None, song=None, max_tracks_to_search=None):

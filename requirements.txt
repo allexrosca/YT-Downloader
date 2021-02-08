@@ -10,3 +10,4 @@ typing-extensions==3.7.4.3
 Unidecode==1.1.2
 urllib3==1.26.3
 youtube-dl==2021.1.24.1
+eyed3~=0.9.6

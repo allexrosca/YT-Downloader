@@ -1,6 +1,6 @@
 import requests
 from general_utils.methods import normalize_string
-from utils.methods import full_match_artist_song_in_tracks, full_match_artist_album_in_tracks
+from .utils.methods import full_match_artist_song_in_tracks, full_match_artist_album_in_tracks
 
 
 class iTunesSearch:
@@ -38,7 +38,7 @@ class iTunesSearch:
             for track in response.json()['results']:
                 if 'artistName' in track:
                     if normalize_string(track['artistName']) == normalize_string(artist):
-                        return True, track
+                        return True, track['artistName']
         return False, None
 
     def search_song(self, song, max_tracks_to_search=None):
@@ -49,7 +49,7 @@ class iTunesSearch:
             for track in response.json()['results']:
                 if 'trackName' in track:
                     if normalize_string(track['trackName']) == normalize_string(song):
-                        return True, track
+                        return True, track['trackName']
         return False, None
 
     def search_album(self, album, max_tracks_to_search=None):
@@ -60,7 +60,7 @@ class iTunesSearch:
             for track in response.json()['results']:
                 if 'collectionName' in track:
                     if normalize_string(track['collectionName']) == normalize_string(album):
-                        return True, track
+                        return True, track['collectionName']
         return False, None
 
     def search_artist_song(self, artist, song, max_tracks_to_search=None):

@@ -7,7 +7,7 @@ def full_match_artist_song_in_tracks(artist, song, track_list):
         if 'artist' in track and 'name' in track['artist'] and 'title' in track:
             if normalize_string(track['artist']['name']) == normalize_string(artist) and \
                     normalize_string(track['title']) == normalize_string(song):
-                return True, track
+                return True, track['title']
     return False, None
 
 
@@ -18,5 +18,5 @@ def full_match_artist_album_in_tracks(artist, album, track_list):
                 'album' in track and 'title' in track['album']:
             if normalize_string(track['artist']['name']) == normalize_string(artist) and \
                     normalize_string(track['album']['title']) == normalize_string(album):
-                return True, track
+                return True, track['album']['title']
     return False, None

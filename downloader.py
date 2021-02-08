@@ -1,9 +1,11 @@
 from __future__ import unicode_literals
 import os
+import eyed3
 from PySide2 import QtCore
 from pytube import Playlist
-from general_utils.methods import check_and_create_folder, generate_error_folder_path
+from general_utils.methods import check_and_create_folder, generate_error_folder_path, cast_song_title_to_file_name
 from youtube_dl import YoutubeDL
+from metadata_checker import MetadataChecker
 
 
 class PlaylistDownloader(QtCore.QThread, QtCore.QObject):
@@ -11,6 +13,7 @@ class PlaylistDownloader(QtCore.QThread, QtCore.QObject):
     playlist_link_index = QtCore.Signal(int)
     current_link_index = QtCore.Signal(int)
     download_status = QtCore.Signal(bool)
+    message_signal = QtCore.Signal(str)
 
     def __init__(self, download_content, download_folder, ydl_opts=None, *args, **kwargs):
         QtCore.QThread.__init__(self, *args, **kwargs)
@@ -22,6 +25,9 @@ class PlaylistDownloader(QtCore.QThread, QtCore.QObject):
         self.current_song = ''
         self.terminate_thread = False
         self.songs_number = 0
+
+    def _get_file_full_path(self, file_name):
+        return os.path.join(self._download_folder, file_name)
 
     def download(self, ydl_opts=None):
         check_and_create_folder(self._download_folder)
@@ -51,11 +57,22 @@ class PlaylistDownloader(QtCore.QThread, QtCore.QObject):
                         link_info = ydl.extract_info(song_link, download=True)
                         if link_info:
                             if 'title' in link_info and link_info['title']:
-                                pass
+                                print('Adding file metadata...')
+                                self.message_signal.emit('Adding file metadata...')
+
+                                song_title = link_info['title']
+                                file_full_path = self._get_file_full_path(cast_song_title_to_file_name(song_title))
+                                audio_file = eyed3.load(file_full_path)
+                                metadata_checker = MetadataChecker(audio_file, song_title)
+                                metadata_checker.check_artist()
+                                metadata_checker.check_artist_song_title()
+                                print('\tMetadata added!\n')
+                                self.message_signal.emit('Metadata added!\n')
                             else:
                                 pass
                         else:
-                            pass
+                            download_error_flag = True
+                            not_accessible_links.append((song_link, e))
                     except Exception as e:
                         download_error_flag = True
                         not_accessible_links.append((song_link, e))
@@ -78,7 +95,7 @@ class PlaylistDownloader(QtCore.QThread, QtCore.QObject):
             self.playlist_link_index.emit(self.download_content.index(link) + 1)
             link = Playlist(link)
             # link._video_regex = re.compile(r"\"url\":\"(/watch\?v=[\w-]*)")  # TODO: if everything works without this line, delete it in the future
-            self.playlist_length.emit(len(link))
+            self.playlist_length.emit(len(link) + 1)
             return link
         return [link]
 

@@ -6,7 +6,7 @@ from PySide2 import QtCore, QtWidgets, QtGui
 from PySide2.QtWidgets import QFileDialog, QCheckBox, QTextEdit, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QGridLayout
 from downloader_logger import DownloadLogger, CONFIG
 from downloader import PlaylistDownloader
-from general_utils.methods import get_short_path, generate_error_folder_path
+from general_utils.methods import get_short_path, generate_error_folder_path, cast_song_title_to_file_name
 
 
 class YTDownloaderUI(QtWidgets.QWidget):
@@ -235,6 +235,7 @@ class YTDownloaderUI(QtWidgets.QWidget):
             self._ytdl_opts['outtmpl'] = f'{self._download_folder}/%(title)s.%(ext)s'
 
             self.thread = PlaylistDownloader(self._user_input, self._download_folder, self._ytdl_opts)
+            self.thread.message_signal.connect(self._show_progress)
             self._set_button_status(['Download', 'Reset', 'Change Folder', 'Exit'], False)
             self.thread.finished.connect(self._when_download_finished)
 
@@ -301,7 +302,7 @@ class YTDownloaderUI(QtWidgets.QWidget):
             self._downloader_output.append('\n=== Removing temp files ===')
             with youtube_dl.YoutubeDL(self._ytdl_opts) as ydl:
                 file_to_delete_info = ydl.extract_info(self._file_to_delete, download=False)
-                file_to_delete = file_to_delete_info['title'].replace('\\', '_').replace('/', '_')
+                file_to_delete = cast_song_title_to_file_name(file_to_delete_info['title'])
                 for file_object in os.listdir(self._download_folder):
                     if file_object.find(file_to_delete) != -1:
                         file_object_path = os.path.join(self._download_folder, file_object)
