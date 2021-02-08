@@ -300,9 +300,10 @@ class YTDownloaderUI(QtWidgets.QWidget):
         if self._download_interrupted and self.thread.isFinished():
             self._downloader_output.append('\n=== Removing temp files ===')
             with youtube_dl.YoutubeDL(self._ytdl_opts) as ydl:
-                current_file = ydl.extract_info(self._file_to_delete, download=False)
+                file_to_delete_info = ydl.extract_info(self._file_to_delete, download=False)
+                file_to_delete = file_to_delete_info['title'].replace('\\', '_').replace('/', '_')
                 for file_object in os.listdir(self._download_folder):
-                    if file_object.find(current_file['title']) != -1:
+                    if file_object.find(file_to_delete) != -1:
                         file_object_path = os.path.join(self._download_folder, file_object)
                         if os.path.isfile(file_object_path):
                             os.remove(file_object_path)

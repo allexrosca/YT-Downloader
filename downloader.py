@@ -23,24 +23,55 @@ class PlaylistDownloader(QtCore.QThread, QtCore.QObject):
         self.terminate_thread = False
         self.songs_number = 0
 
-    def download(self, link, ydl_opts=None):
+    def download(self, ydl_opts=None):
+        check_and_create_folder(self._download_folder)
+
         if ydl_opts is None:
             ydl_opts = self.ydl_opts
 
+        current_index = 0
+        download_error_flag = False
+        not_accessible_links = []
+
         with YoutubeDL(ydl_opts) as ydl:
-            try:
-                ydl.cache.remove()
-                link_info = ydl.extract_info(link, download=True)
-                if link_info:
-                    if 'title' in link_info and link_info['title']:
-                        pass
-                    else:
-                        pass
+            for link in self.download_content:
+                if self.terminate_thread:
+                    break
+
+                self.current_link_index.emit(current_index)
+
+                for song_link in self._prepare_link(link):
+                    if self.terminate_thread:
+                        break
+
+                    self.current_song = song_link
+
+                    try:
+                        ydl.cache.remove()
+                        link_info = ydl.extract_info(song_link, download=True)
+                        if link_info:
+                            if 'title' in link_info and link_info['title']:
+                                pass
+                            else:
+                                pass
+                        else:
+                            pass
+                    except Exception as e:
+                        download_error_flag = True
+                        not_accessible_links.append((song_link, e))
+
+                if download_error_flag:
+                    self.download_status.emit(False)
                 else:
-                    pass
-            except Exception as e:
-                return False, str(e)
-        return True, None
+                    self.download_status.emit(True)
+
+                if self.terminate_thread:
+                    break
+
+                current_index = current_index + 1
+                download_error_flag = False
+
+        return not_accessible_links
 
     def _prepare_link(self, link):
         if str(link).find('playlist') != -1 or str(link).find('list') != -1:
@@ -52,43 +83,12 @@ class PlaylistDownloader(QtCore.QThread, QtCore.QObject):
         return [link]
 
     def run(self):
-        current_index = 0
-        download_error_flag = False
-        not_accessible_links = []
-        check_and_create_folder(self._download_folder)
+        not_accessible_links = self.download()
 
-        for link in self.download_content:
-            if self.terminate_thread:
-                break
+        if not_accessible_links and len(not_accessible_links):
+            errors_folder_path = generate_error_folder_path(self._download_folder)
+            check_and_create_folder(errors_folder_path)
 
-            self.current_link_index.emit(current_index)
-
-            for song_link in self._prepare_link(link):
-                if self.terminate_thread:
-                    break
-
-                self.current_song = song_link
-                status, error = self.download(song_link)
-
-                if not status:
-                    not_accessible_links.append((song_link, error))
-
-            if download_error_flag:
-                self.download_status.emit(False)
-            else:
-                self.download_status.emit(True)
-
-            if self.terminate_thread:
-                break
-
-            current_index = current_index + 1
-            download_error_flag = False
-
-        if len(not_accessible_links):
-            errors_folder = generate_error_folder_path(self._download_folder)
-            check_and_create_folder(errors_folder)
-
-            if not_accessible_links:
-                file = open(os.path.join(errors_folder, 'not_accessible_links.txt'), 'w')
-                file.write('\n'.join(str(link) + ' -> ' + str(error) + '\n' for link, error in not_accessible_links))
-                file.close()
+            file = open(os.path.join(errors_folder_path, 'not_accessible_links.txt'), 'w')
+            file.write('\n'.join(str(link) + ' -> ' + str(error) + '\n' for link, error in not_accessible_links))
+            file.close()
