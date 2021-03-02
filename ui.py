@@ -4,8 +4,8 @@ import youtube_dl
 import json
 from PySide2 import QtCore, QtWidgets, QtGui
 from PySide2.QtWidgets import QFileDialog, QCheckBox, QTextEdit, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QGridLayout
-from downloader_logger import DownloadLogger, CONFIG
-from downloader import PlaylistDownloader
+from downloader.logger import DownloadLogger, CONFIG
+from downloader.downloader import PlaylistDownloader
 from general_utils.methods import get_short_path, generate_error_folder_path, cast_song_title_to_file_name
 
 

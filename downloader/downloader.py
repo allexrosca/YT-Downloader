@@ -5,7 +5,7 @@ from PySide2 import QtCore
 from pytube import Playlist
 from general_utils.methods import check_and_create_folder, generate_error_folder_path, cast_song_title_to_file_name
 from youtube_dl import YoutubeDL
-from metadata_checker import MetadataChecker
+from metadata.wrapper import check_metadata
 
 
 class PlaylistDownloader(QtCore.QThread, QtCore.QObject):
@@ -61,11 +61,9 @@ class PlaylistDownloader(QtCore.QThread, QtCore.QObject):
                                 self.message_signal.emit('Adding file metadata...')
 
                                 song_title = link_info['title']
-                                file_full_path = self._get_file_full_path(cast_song_title_to_file_name(song_title))
-                                audio_file = eyed3.load(file_full_path)
-                                metadata_checker = MetadataChecker(audio_file, song_title)
-                                metadata_checker.check_artist()
-                                metadata_checker.check_artist_song_title()
+                                audio_file = eyed3.load(self._get_file_full_path(cast_song_title_to_file_name(song_title)))
+                                check_metadata(audio_file, song_title)
+
                                 print('\tMetadata added!\n')
                                 self.message_signal.emit('Metadata added!\n')
                             else:
